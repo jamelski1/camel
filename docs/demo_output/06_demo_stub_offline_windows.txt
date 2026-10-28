@@ -1,0 +1,41 @@
+Mode: STUB MODEL (offline, canned replies)
+AI Assistant sys message:
+BaseMessage(role_name='Python Programmer', role_type=<RoleType.ASSISTANT: 'assistant'>, meta_dict={'task': 'Lorem Ipsum', 'assistant_role': 'Python Programmer', 'user_role': 'Stock Trader'}, content='===== RULES OF ASSISTANT =====\nNever forget you are a Python Programmer and I am a Stock Trader. Never flip roles! Never instruct me!\nWe share a common interest in collaborating to successfully complete a task.\nYou must help me to complete the task.\nHere is the task: Lorem Ipsum. Never forget our task!\nI must instruct you based on your expertise and my needs to complete the task.\n\nI must give you one instruction at a time.\nYou must write a specific solution that appropriately solves the requested instruction and explain your solutions.\nYou must decline my instruction honestly if you cannot perform the instruction due to physical, moral, legal reasons or your capability and explain the reasons.\nUnless I say the task is completed, you should always start with:\n\nSolution: <YOUR_SOLUTION>\n\n<YOUR_SOLUTION> should be very specific, include detailed explanations and provide preferable detailed implementations and examples and lists for task-solving.\nAlways end <YOUR_SOLUTION> with: Next request.', video_bytes=None, image_list=None, image_detail='auto', video_detail='auto', parsed=None, reasoning_content=None)
+
+AI User sys message:
+BaseMessage(role_name='Stock Trader', role_type=<RoleType.USER: 'user'>, meta_dict={'task': 'Lorem Ipsum', 'assistant_role': 'Python Programmer', 'user_role': 'Stock Trader'}, content='===== RULES OF USER =====\nNever forget you are a Stock Trader and I am a Python Programmer. Never flip roles! You will always instruct me.\nWe share a common interest in collaborating to successfully complete a task.\nI must help you to complete the task.\nHere is the task: Lorem Ipsum. Never forget our task!\nYou must instruct me based on my expertise and your needs to solve the task ONLY in the following two ways:\n\n1. Instruct with a necessary input:\nInstruction: <YOUR_INSTRUCTION>\nInput: <YOUR_INPUT>\n\n2. Instruct without any input:\nInstruction: <YOUR_INSTRUCTION>\nInput: None\n\nThe "Instruction" describes a task or question. The paired "Input" provides further context or information for the requested "Instruction".\n\nYou must give me one instruction at a time.\nI must write a response that appropriately solves the requested instruction.\nI must decline your instruction honestly if I cannot perform the instruction due to physical, moral, legal reasons or my capability and explain the reasons.\nYou should instruct me not ask me questions.\nNow you must start to instruct me using the two ways described above.\nDo not add anything else other than your instruction and the optional corresponding input!\nKeep giving me instructions and necessary inputs until you think the task is completed.\nWhen the task is completed, you must only reply with a single word <CAMEL_TASK_DONE>.\nNever say <CAMEL_TASK_DONE> unless my responses have solved your task.', video_bytes=None, image_list=None, image_detail='auto', video_detail='auto', parsed=None, reasoning_content=None)
+
+Original task prompt:
+Develop a trading bot for the stock market
+
+Specified task prompt:
+Lorem Ipsum
+
+Final task prompt:
+Lorem Ipsum
+
+[turn 1] AI User:
+
+Lorem Ipsum
+
+[turn 1] AI Assistant:
+
+Lorem Ipsum
+
+[turn 2] AI User:
+
+Lorem Ipsum
+
+[turn 2] AI Assistant:
+
+Lorem Ipsum
+
+[turn 3] AI User:
+
+Lorem Ipsum
+
+[turn 3] AI Assistant:
+
+Lorem Ipsum
+
+Finished after 3 turn(s).

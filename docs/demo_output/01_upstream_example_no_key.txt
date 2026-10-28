@@ -1,0 +1,22 @@
+Traceback (most recent call last):
+  File "/home/user/camel/camel/examples/ai_society/role_playing.py", line 88, in <module>
+    main()
+  File "/home/user/camel/camel/examples/ai_society/role_playing.py", line 22, in main
+    role_play_session = RolePlaying(
+  File "/home/user/camel/camel/camel/societies/role_playing.py", line 135, in __init__
+    self._init_specified_task_prompt(
+  File "/home/user/camel/camel/camel/societies/role_playing.py", line 253, in _init_specified_task_prompt
+    task_specify_agent = TaskSpecifyAgent(
+  File "/home/user/camel/camel/camel/agents/task_agent.py", line 87, in __init__
+    super().__init__(
+  File "/home/user/camel/camel/camel/agents/chat_agent.py", line 542, in __init__
+    resolved_models = self._resolve_models(model)
+  File "/home/user/camel/camel/camel/agents/chat_agent.py", line 735, in _resolve_models
+    return ModelFactory.create(
+  File "/home/user/camel/camel/camel/models/model_factory.py", line 227, in create
+    return model_class(
+  File "/home/user/camel/camel/camel/utils/commons.py", line 354, in wrapper
+    raise ValueError(
+ValueError: Missing or empty required API keys in environment variables: OPENAI_API_KEY.
+You can obtain the API key from https://platform.openai.com/docs/overview
+exit code: 1

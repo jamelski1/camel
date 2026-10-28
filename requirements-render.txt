@@ -1,0 +1,5 @@
+# Dependencies for the hosted Playground (Render.com). Local development uses
+# setup.sh / setup.ps1 (CAMEL from the git submodule) instead of this file.
+camel-ai==0.2.91a7      # same version as the camel/ submodule (upstream commit 797296a)
+gradio==6.30.0
+python-dotenv>=1.0

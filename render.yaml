@@ -1,0 +1,28 @@
+# Render.com Blueprint: hosts demo/playground.py as a web service and redeploys
+# on every push to main. Dashboard: New > Blueprint > pick this repo.
+# Secrets (API key, password) are set in the Render dashboard, never here.
+services:
+  - type: web
+    name: camel-playground
+    runtime: python
+    plan: free                 # spins down after ~15 min idle; first visit then takes ~1 min
+    branch: main
+    autoDeploy: true
+    buildCommand: pip install -r requirements-render.txt
+    startCommand: python demo/playground.py --no-browser
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: MODEL_PLATFORM     # provider the hosted app defaults to; change in the dashboard
+        value: openrouter
+      - key: MODEL_NAME         # OpenRouter's auto-router over its free models; or pick one, e.g. google/gemma-4-31b-it:free
+        value: openrouter/free
+      - key: OPENROUTER_API_KEY # entered in the dashboard when the Blueprint is created (https://openrouter.ai/keys)
+        sync: false
+      - key: PLAYGROUND_USER    # login the team shares
+        value: group3
+      - key: PLAYGROUND_PASSWORD
+        generateValue: true     # Render generates it; read it from the service's Environment tab
+      - key: GRADIO_ANALYTICS_ENABLED
+        value: "False"

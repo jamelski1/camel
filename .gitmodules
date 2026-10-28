@@ -1,0 +1,3 @@
+[submodule "camel"]
+	path = camel
+	url = https://github.com/camel-ai/camel.git

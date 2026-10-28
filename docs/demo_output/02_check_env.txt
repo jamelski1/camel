@@ -1,0 +1,9 @@
+Python        : 3.10.20 (/home/user/camel/.venv/bin/python)
+CAMEL version : 0.2.91a7
+CAMEL path    : /home/user/camel/camel/camel
+CAMEL commit  : 797296a
+OPENAI_API_KEY: NOT SET
+
+Package is ready, but LLM-backed demos are BLOCKED until a key
+is placed in .env (see .env.example). The offline smoke test
+still works:  python demo/role_playing_demo.py --stub

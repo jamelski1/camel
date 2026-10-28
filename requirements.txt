@@ -1,0 +1,8 @@
+# Plain-pip alternative to setup.sh / setup.ps1 for anyone without uv: the same
+# CAMEL version the camel/ submodule is pinned to (upstream commit 797296a),
+# installed from PyPI instead of from source, plus what the notebook and the
+# Playground need. The hosted Playground on Render uses requirements-render.txt.
+camel-ai==0.2.91a7
+python-dotenv>=1.0
+gradio==6.30.0          # demo/playground.py and the notebook's Playground cell
+notebook                # demo/role_playing_demo.ipynb
