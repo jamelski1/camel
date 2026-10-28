@@ -41,6 +41,96 @@ back and forth. The method is from Li et al., *CAMEL: Communicative Agents for
 (arXiv:2303.17760). Code: https://github.com/camel-ai/camel, docs:
 https://docs.camel-ai.org.
 
+## How the pieces fit together (ER diagram)
+
+CAMEL keeps no database; everything below lives in memory for one run. So this
+entity-relationship diagram describes the runtime objects and how they relate,
+which is the structure the report needs. Boxes from `ROLE_PLAYING_SESSION`
+down to `MESSAGE` are upstream CAMEL; `PLAYGROUND`, `NARRATOR_AGENT`,
+`COACH_AGENT`, `NEXT_MOVE_CARD` and `HUMAN_INPUT` are our additions in
+`demo/playground.py`. GitHub renders the diagram; the source is plain Mermaid.
+
+```mermaid
+erDiagram
+    TASK {
+        string original_prompt "what the human typed"
+        string specified_prompt "sharpened by the task-specifier"
+        bool done "set when the AI User emits CAMEL_TASK_DONE"
+    }
+    TASK_SPECIFY_AGENT {
+        string task_type "ai_society"
+    }
+    ROLE_PLAYING_SESSION {
+        string assistant_role_name "e.g. Python Programmer"
+        string user_role_name "e.g. Stock Trader"
+        string task_prompt "the task both agents see"
+        int turn "turns completed so far"
+    }
+    CHAT_AGENT {
+        string role "AI User or AI Assistant"
+        string system_message "the rulebook for that role"
+    }
+    MEMORY {
+        int token_limit "context window kept per agent"
+    }
+    MESSAGE {
+        string role_name "who said it"
+        string content "Instruction / Input or Solution"
+        int turn "when it was said"
+    }
+    MODEL_BACKEND {
+        string platform "openai, groq, gemini, openrouter, ollama, ..."
+        string model_name "e.g. gpt-4.1-mini"
+        string api_key_env "env var the key is read from"
+    }
+    PLAYGROUND {
+        string mode "model label or stub"
+        bool concise "short-reply style rule on or off"
+        string pending_guidance "human note for the next turn"
+    }
+    NARRATOR_AGENT {
+        string kind "a ChatAgent with its own system message"
+    }
+    COACH_AGENT {
+        string kind "a ChatAgent created per suggestion"
+    }
+    NEXT_MOVE_CARD {
+        string text "a suggested instruction or question"
+    }
+    HUMAN_INPUT {
+        string type "card tap, instruction, note or question"
+        string text
+    }
+
+    TASK_SPECIFY_AGENT ||--o| TASK : "sharpens"
+    ROLE_PLAYING_SESSION ||--|| TASK : "works on"
+    ROLE_PLAYING_SESSION ||--|{ CHAT_AGENT : "pairs two of (AI User, AI Assistant)"
+    CHAT_AGENT ||--|| MEMORY : "keeps"
+    MEMORY ||--o{ MESSAGE : "stores"
+    CHAT_AGENT ||--o{ MESSAGE : "produces one per turn"
+    CHAT_AGENT }o--|| MODEL_BACKEND : "calls"
+    TASK_SPECIFY_AGENT }o--|| MODEL_BACKEND : "calls"
+
+    PLAYGROUND ||--|| ROLE_PLAYING_SESSION : "drives step by step"
+    PLAYGROUND ||--|| NARRATOR_AGENT : "owns"
+    PLAYGROUND ||--o{ COACH_AGENT : "creates after each turn"
+    COACH_AGENT ||--|{ NEXT_MOVE_CARD : "proposes three"
+    PLAYGROUND ||--o{ HUMAN_INPUT : "accepts"
+    HUMAN_INPUT }o--o| MESSAGE : "becomes, in the user or assistant agent's memory"
+    NARRATOR_AGENT }o--|| MODEL_BACKEND : "calls"
+    COACH_AGENT }o--|| MODEL_BACKEND : "calls"
+```
+
+Reading the diagram: one session owns one task and exactly two `ChatAgent`s.
+Each agent has its own memory of messages and its own system message, but in
+our setup all agents share one model backend, chosen per team member through
+`.env`. The task-specifier runs once, before the session, and may rewrite the
+task. The Playground wraps the session: after every turn a coach agent
+proposes three cards, a narrator agent summarises bursts, and anything the
+human types is written into an agent's memory as a message so the agents stay
+coherent. Upstream CAMEL also supports an optional critic agent and task
+planner (fields on `RolePlaying`); we do not use them, so they are omitted.
+
 ## Repository layout
 
 ```
@@ -403,6 +493,6 @@ an AI tool on our behalf.
 - [x] Real LLM demo run captured (5 turns, `docs/demo_output/07_demo_real_llm_5_turns.txt`)
 - [x] Repository pushed to GitHub: https://github.com/jamelski1/camel
 - [ ] Project report
-- [ ] ER diagram
+- [x] ER diagram (Mermaid, in this README)
 - [ ] Demo video
 - [ ] Future plan section
