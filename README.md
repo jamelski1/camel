@@ -10,6 +10,20 @@ CAMEL source is included as a git submodule pinned to an exact commit, so the
 team can read the framework code for the report without us copying 2,000+
 upstream files into our own history.
 
+## Try it live
+
+**Hosted Playground: https://camel-playground.onrender.com** (login name
+`group3`; the password is shared with the team and the course staff). Type any
+task, press Start, and watch two CAMEL agents work on it, or take the
+instruction seat yourself. It runs on Render's free plan, so the first visit
+after a quiet period takes up to a minute to wake.
+
+No account needed to read the demo: the notebook
+[demo/role_playing_demo.ipynb](demo/role_playing_demo.ipynb) is committed with
+the outputs of a real 5-turn run, or
+[open it in Colab](https://colab.research.google.com/github/jamelski1/camel/blob/main/demo/role_playing_demo.ipynb)
+to run it with your own key.
+
 ## What CAMEL is (one paragraph for the report)
 
 CAMEL ("Communicative Agents for 'Mind' Exploration of Large Language Model
@@ -293,7 +307,7 @@ whoever owns the Render account:
    and `OPENAI_API_KEY` in the Environment tab.
 3. First build takes a few minutes (`pip install -r requirements-render.txt`,
    CAMEL from PyPI at the same pinned version as the submodule). The URL is
-   shown at the top of the service page, e.g. `https://camel-playground.onrender.com`.
+   shown at the top of the service page; ours is https://camel-playground.onrender.com.
 
 After that: push to `main`, Render rebuilds and restarts automatically. Each
 visitor gets their own conversation (per-browser session), and the login stops
