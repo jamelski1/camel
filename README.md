@@ -18,6 +18,9 @@ task, press Start, and watch two CAMEL agents work on it, or take the
 instruction seat yourself. It runs on Render's free plan, so the first visit
 after a quiet period takes up to a minute to wake.
 
+**Demo video:** https://drive.google.com/file/d/1jsQBaKJzxOgjVpOkQbZcRezwolk6Fwi-/view
+(Google Drive) walks through the notebook run and the Playground.
+
 No account needed to read the demo: the notebook
 [demo/role_playing_demo.ipynb](demo/role_playing_demo.ipynb) is committed with
 the outputs of a real 5-turn run, or
@@ -531,5 +534,5 @@ an AI tool on our behalf.
 - [x] Repository pushed to GitHub: https://github.com/jamelski1/camel
 - [x] Project report (`docs/CAMEL_Technical_Report.docx`)
 - [x] ER diagram (`docs/CAMEL_Playground_ER_Diagram_and_Future_Plan.docx`, also embedded in this README)
-- [ ] Demo video
+- [x] Demo video: https://drive.google.com/file/d/1jsQBaKJzxOgjVpOkQbZcRezwolk6Fwi-/view
 - [x] Future plan section (in `docs/CAMEL_Playground_ER_Diagram_and_Future_Plan.docx`)
