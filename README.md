@@ -41,7 +41,23 @@ back and forth. The method is from Li et al., *CAMEL: Communicative Agents for
 (arXiv:2303.17760). Code: https://github.com/camel-ai/camel, docs:
 https://docs.camel-ai.org.
 
-## How the pieces fit together (ER diagram)
+## Report, ER diagram and future plan
+
+The written Phase 1 deliverables live in `docs/`:
+
+- **[CAMEL_Technical_Report.docx](docs/CAMEL_Technical_Report.docx)**: how the
+  system works, code and technology analysis, demonstration and evaluation,
+  lessons learned, references.
+- **[CAMEL_Playground_ER_Diagram_and_Future_Plan.docx](docs/CAMEL_Playground_ER_Diagram_and_Future_Plan.docx)**:
+  the proposed **persistent data model** for a future version of the Playground
+  (users, tasks, agent sessions, model configurations, messages, guidance) with
+  the ER diagram as a figure, followed by the phased future development plan.
+
+The diagram in the next section is complementary: it shows the objects that
+exist **at runtime today**, in memory, with no database. The document above
+shows what that structure becomes once sessions are stored.
+
+## How the pieces fit together (runtime ER diagram)
 
 CAMEL keeps no database; everything below lives in memory for one run. So this
 entity-relationship diagram describes the runtime objects and how they relate,
@@ -151,6 +167,8 @@ planner (fields on `RolePlaying`); we do not use them, so they are omitted.
 │   ├── role_playing_demo.ipynb <- same demo as a notebook, with a saved real run, plus the Playground
 │   └── playground.py         <- interactive web UI: any task, bursts, narrator, human feedback
 └── docs/
+    ├── CAMEL_Technical_Report.docx                      <- Phase 1 technical report
+    ├── CAMEL_Playground_ER_Diagram_and_Future_Plan.docx <- proposed data model and future plan
     ├── SETUP_NOTES.md        <- every command run, every error, every fix
     └── demo_output/          <- captured logs proving what ran
 ```
@@ -492,7 +510,7 @@ an AI tool on our behalf.
 - [x] Demo script + offline verification
 - [x] Real LLM demo run captured (5 turns, `docs/demo_output/07_demo_real_llm_5_turns.txt`)
 - [x] Repository pushed to GitHub: https://github.com/jamelski1/camel
-- [ ] Project report
-- [x] ER diagram (Mermaid, in this README)
+- [x] Project report (`docs/CAMEL_Technical_Report.docx`)
+- [x] ER diagram (`docs/CAMEL_Playground_ER_Diagram_and_Future_Plan.docx`; runtime view in this README)
 - [ ] Demo video
-- [ ] Future plan section
+- [x] Future plan section (in `docs/CAMEL_Playground_ER_Diagram_and_Future_Plan.docx`)
