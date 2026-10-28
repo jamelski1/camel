@@ -51,17 +51,20 @@ The written Phase 1 deliverables live in `docs/`:
 - **[CAMEL_Playground_ER_Diagram_and_Future_Plan.docx](docs/CAMEL_Playground_ER_Diagram_and_Future_Plan.docx)**:
   the proposed **persistent data model** for a future version of the Playground
   (users, tasks, agent sessions, model configurations, messages, guidance) with
-  the ER diagram as a figure, followed by the phased future development plan.
+  the ER diagram below as a figure, followed by the phased future development plan.
 
-The diagram in the next section is complementary: it shows the objects that
-exist **at runtime today**, in memory, with no database. The document above
-shows what that structure becomes once sessions are stored.
+![Proposed logical ER diagram for the CAMEL Playground](docs/er_diagram_proposed.png)
 
-## How the pieces fit together (runtime ER diagram)
+This is the project's ER diagram: a proposed schema, since the current demo
+keeps everything in memory and has no database. The next section shows the
+same system from the other side, the objects that exist at runtime today, and
+ends with a table mapping one onto the other.
 
-CAMEL keeps no database; everything below lives in memory for one run. So this
-entity-relationship diagram describes the runtime objects and how they relate,
-which is the structure the report needs. Boxes from `ROLE_PLAYING_SESSION`
+## How the pieces fit together (runtime object diagram)
+
+Everything below lives in memory for one run. This diagram describes the
+runtime objects and how they relate, in the same box-and-line notation as the
+ER diagram above so the two can be read together. Boxes from `ROLE_PLAYING_SESSION`
 down to `MESSAGE` are upstream CAMEL; `PLAYGROUND`, `NARRATOR_AGENT`,
 `COACH_AGENT`, `NEXT_MOVE_CARD` and `HUMAN_INPUT` are our additions in
 `demo/playground.py`. GitHub renders the diagram; the source is plain Mermaid.
@@ -147,6 +150,21 @@ human types is written into an agent's memory as a message so the agents stay
 coherent. Upstream CAMEL also supports an optional critic agent and task
 planner (fields on `RolePlaying`); we do not use them, so they are omitted.
 
+How the runtime objects map onto the proposed schema in
+`docs/CAMEL_Playground_ER_Diagram_and_Future_Plan.docx`:
+
+| Runtime object (this diagram) | Proposed table (ER diagram above) | Note |
+|---|---|---|
+| `ROLE_PLAYING_SESSION` | `AGENT_SESSION` | one row per run; `turn_count`, `status` and `is_stub` are the session's `turn`, `done` and mode |
+| `TASK` | `TASK` | `original_task` / `specified_task` are the same two fields |
+| `CHAT_AGENT` | `AGENT` + `SESSION_AGENT` | the schema splits the reusable role (`AGENT`) from its use in one session (`SESSION_AGENT`) |
+| `MESSAGE` | `MESSAGE` | `speaker` is the `session_agent_id`; `created_at` replaces the turn number |
+| `MODEL_BACKEND` | `MODEL_CONFIG` | `provider`, `model_name`, `is_local` (Ollama) |
+| `HUMAN_INPUT` | `GUIDANCE` | `guidance_type` is our card tap / instruction / note / question |
+| `NARRATOR_AGENT`, `COACH_AGENT`, `NEXT_MOVE_CARD` | not stored | derived from the messages each time, so they need no table |
+| none | `APP_USER` | the Playground has no accounts yet; this is the future-plan part |
+| `MEMORY` | none | an in-process cache of `MESSAGE` rows; the table replaces it |
+
 ## Repository layout
 
 ```
@@ -169,6 +187,7 @@ planner (fields on `RolePlaying`); we do not use them, so they are omitted.
 └── docs/
     ├── CAMEL_Technical_Report.docx                      <- Phase 1 technical report
     ├── CAMEL_Playground_ER_Diagram_and_Future_Plan.docx <- proposed data model and future plan
+    ├── er_diagram_proposed.png                          <- the ER diagram from that document
     ├── SETUP_NOTES.md        <- every command run, every error, every fix
     └── demo_output/          <- captured logs proving what ran
 ```
@@ -511,6 +530,6 @@ an AI tool on our behalf.
 - [x] Real LLM demo run captured (5 turns, `docs/demo_output/07_demo_real_llm_5_turns.txt`)
 - [x] Repository pushed to GitHub: https://github.com/jamelski1/camel
 - [x] Project report (`docs/CAMEL_Technical_Report.docx`)
-- [x] ER diagram (`docs/CAMEL_Playground_ER_Diagram_and_Future_Plan.docx`; runtime view in this README)
+- [x] ER diagram (`docs/CAMEL_Playground_ER_Diagram_and_Future_Plan.docx`, also embedded in this README)
 - [ ] Demo video
 - [x] Future plan section (in `docs/CAMEL_Playground_ER_Diagram_and_Future_Plan.docx`)
