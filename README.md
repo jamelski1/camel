@@ -1,9 +1,16 @@
-# SENG 691 – Group 3 – CAMEL Multi-Agent Framework (Phase 1)
+# SENG 691 – Group 3 – CAMEL Multi-Agent Framework (Phases 1 and 2)
 
 Phase 1 deliverable: the CAMEL agent framework built and deployed in a working
 environment, with a reproducible demo of its main behaviour (two LLM agents
 role-playing to solve a task). Group submission due **Tuesday, Oct 27, 2026,
 11:59 PM EDT**.
+
+Phase 2 (due **Sunday, Nov 15, 2026, 11:59 PM EST**) implements the three
+enhancements the Phase 1 future plan proposed: persistent sessions, progress
+monitoring with run controls, and model configuration with preflight checks
+and automatic retry. See **Phase 2 enhancements** below for what was built,
+how it is verified, and how to run the tests and benchmarks. The hosted
+Playground and the `main` branch of this repository now run the Phase 2 build.
 
 This repository contains **our setup, demo scripts and notes**. The upstream
 CAMEL source is included as a git submodule pinned to an exact commit, so the
@@ -18,14 +25,84 @@ task, press Start, and watch two CAMEL agents work on it, or take the
 instruction seat yourself. It runs on Render's free plan, so the first visit
 after a quiet period takes up to a minute to wake.
 
-**Demo video:** https://drive.google.com/file/d/1jsQBaKJzxOgjVpOkQbZcRezwolk6Fwi-/view
+**Demo video (Phase 1):** https://drive.google.com/file/d/1jsQBaKJzxOgjVpOkQbZcRezwolk6Fwi-/view
 (Google Drive) walks through the notebook run and the Playground.
+
+**Phase 2 demo video:** a narrated walkthrough of the three enhancements
+running in the app's offline test mode, submitted with the Phase 2 report
+through Blackboard.
 
 No account needed to read the demo: the notebook
 [demo/role_playing_demo.ipynb](demo/role_playing_demo.ipynb) is committed with
 the outputs of a real 5-turn run, or
 [open it in Colab](https://colab.research.google.com/github/jamelski1/camel/blob/main/demo/role_playing_demo.ipynb)
 to run it with your own key.
+
+## Phase 2 enhancements
+
+Phase 2 keeps the Phase 1 Playground and adds the three enhancements from the
+Phase 1 future plan. All three live in `demo/` next to `playground.py`, and
+Phase 2 added **no new third-party dependencies** (the session store uses
+SQLite from the Python standard library).
+
+**1. Persistent sessions** (`demo/session_store.py`). In Phase 1 a session
+lived only in the app's memory; a restart lost the task, the roles, the
+transcript and the settings. Now every session is written through to a SQLite
+database as it runs, with three tables (`sessions`, `messages`, `guidance`)
+taken from the Phase 1 design. The sidebar lists saved sessions; selecting one
+and pressing **Open selected** restores all ten setup fields and the full
+transcript exactly, rebuilds the agents' memories from that transcript, and
+lets the conversation continue. **Delete selected** removes a session with its
+messages and guidance. Sessions are stored in `data/sessions.db` (set
+`PLAYGROUND_DB` to use a different path).
+
+**2. Progress monitoring and run controls** (`demo/progress_monitor.py`). The
+CAMEL paper catalogues how agent conversations break down (repetition, loops,
+flake replies); the paper prevents them by prompt design, but nothing detects
+them during a run. Our monitor is a small deterministic checker, not another
+model call: after every turn it flags repetition (a message 80% similar to one
+the same agent sent recently), stalls (two turns adding almost no new words),
+drift (exchanges that barely mention the task's keywords) and possible
+completion. Flags appear in the chat as Narrator "Progress check:" lines and
+are counted in the status strip. Run controls: **AI User: run all turns** is
+the main autonomous control; the turn limit is 12 by default and adjustable
+from 4 to 40; **Pause** and **Resume** hold and continue a run; and **agent
+mode** at setup runs the whole session with no human input.
+
+**3. Model configuration, preflight and retry** (`demo/model_config.py`).
+In Phase 1 a setup mistake (a missing key, a mistyped model name) only
+surfaced after Start, when the first model call failed mid-run. A preflight
+check now validates the setup first: the provider is known, the model name
+resolves, the API key is present, and the model object can be constructed.
+When a call fails during a run, the error is classified (rate limit, rejected
+key, unknown model, timeout, connection problem, unrecognized), each category
+carries one line of plain guidance, and the temporary categories are retried
+up to three attempts with backoff (0.5 s, then 1 s) while permanent errors
+fail at once. The Playground's provider dropdown offers only **OpenAI** and
+**OpenRouter**, the two providers implemented and tested end to end in the
+app.
+
+**Verification (all offline, no API key needed).**
+`demo/test_phase2.py` runs 19 end-to-end checks of the three enhancements and
+all pass. `demo/benchmark_phase2.py` reports: monitor accuracy on 15
+hand-labelled transcripts (all 11 planted flags caught on the exact labelled
+turn, no false positives; precision, recall and F1 all 1.00 on this small
+suite, which shows the detector implements its stated rules rather than that
+the thresholds are optimal); persistence at scale (50 sessions of 40 messages
+each, 2,000 messages, saved and reopened cold with every field and message
+exact, reopening in about 0.1 ms per session); and error handling (12 of 12
+sample provider errors classified correctly). Code metrics across the six
+implementation files: measured code lines grew from 689 (Phase 1) to 1,405,
+while Lizard's average cyclomatic complexity per function fell from 6.7 to
+5.4, because the new behaviour lives in three small focused modules.
+
+**Known limitations.** On the hosted copy, Render's free plan has an
+ephemeral filesystem, so saved sessions there are wiped whenever the service
+restarts or redeploys, and the saved list is shared by everyone who opens the
+hosted site; run locally, the database persists. The two conversation agents
+are built with no tools, so they can only talk; wiring a CAMEL toolkit into
+the agents is a Phase 3 candidate, as are a visual workflow view and a
+dashboard for comparing sessions and models.
 
 ## What CAMEL is (one paragraph for the report)
 
@@ -58,10 +135,13 @@ The written Phase 1 deliverables live in `docs/`:
 
 ![Proposed logical ER diagram for the CAMEL Playground](docs/er_diagram_proposed.png)
 
-This is the project's ER diagram: a proposed schema, since the current demo
-keeps everything in memory and has no database. The next section shows the
-same system from the other side, the objects that exist at runtime today, and
-ends with a table mapping one onto the other.
+This is the project's ER diagram as proposed in Phase 1, when the demo kept
+everything in memory and had no database. Phase 2 implemented its core:
+sessions, messages and guidance are now stored in SQLite by
+`demo/session_store.py`, and the Phase 2 report carries the revised diagram
+for the schema as implemented. The next section shows the same system from
+the other side, the objects that exist at runtime today, and ends with a
+table mapping one onto the other.
 
 ## How the pieces fit together (runtime object diagram)
 
@@ -186,7 +266,13 @@ How the runtime objects map onto the proposed schema in
 │   ├── check_env.py          <- verifies Python, CAMEL import, key presence
 │   ├── role_playing_demo.py  <- the Phase 1 demo (adapted upstream example)
 │   ├── role_playing_demo.ipynb <- same demo as a notebook, with a saved real run, plus the Playground
-│   └── playground.py         <- interactive web UI: any task, bursts, narrator, human feedback
+│   ├── playground.py         <- interactive web UI: any task, saved sessions, run controls, narrator, human feedback
+│   ├── session_store.py      <- Phase 2: SQLite write-through store (sessions, messages, guidance)
+│   ├── progress_monitor.py   <- Phase 2: deterministic repetition / stall / drift / completion checks
+│   ├── model_config.py       <- Phase 2: preflight checks, error classification, retry with backoff
+│   ├── test_phase2.py        <- Phase 2: offline verification suite (19 checks)
+│   └── benchmark_phase2.py   <- Phase 2: offline benchmarks (monitor accuracy, persistence, error handling)
+├── data/                     <- created at runtime: sessions.db, the Phase 2 session store (not committed)
 └── docs/
     ├── CAMEL_Technical_Report.docx                      <- Phase 1 technical report
     ├── CAMEL_Playground_ER_Diagram_and_Future_Plan.docx <- proposed data model and future plan
@@ -280,6 +366,11 @@ script, or with `PLATFORM` / `MODEL` in the notebook's settings cell
 (precedence: flag or cell > `.env` > default). `--list-platforms` prints
 every platform name CAMEL knows.
 
+Phase 2 note: the Playground's own provider dropdown offers only `openai`
+and `openrouter`, the two providers implemented and tested end to end in the
+app. The demo script and notebook still accept the other CAMEL backends in
+the table below.
+
 | Platform | Key variable | Default model here | Cost |
 |---|---|---|---|
 | `openai` | `OPENAI_API_KEY` | `gpt-4.1-mini-2025-04-14` | paid |
@@ -307,8 +398,9 @@ Checked against the providers' own pages on 2026-10-24 (they change often):
 | Cerebras | No permanent free tier: $5 of trial credit that expires after 30 days | inference-docs.cerebras.ai/support/rate-limits |
 
 Playground calls per action: Start = 3 (roles, task-specifier, cards); tap a
-card or send an instruction = 2 (assistant, new cards); "AI User takes one
-turn" = 4; "run 3 turns" = 8 (six agent calls, Narrator, cards). A ten-minute
+card or send an instruction = 2 (assistant, new cards); "AI User: run all
+turns" costs about 2 agent calls per turn, plus the Narrator summary and
+fresh cards after each turn. A ten-minute
 session is therefore 30 to 50 calls, which is why OpenRouter's 50/day cap is
 hit in one sitting. Options, in order of least hassle:
 
@@ -395,20 +487,26 @@ How it works, in two screens:
    under *Advanced* and can be ignored.
 2. **The conversation.** A strip above the chat always shows the goal (the
    task-specifier's sharpened version), who does the work, who instructs, the
-   turn count, and whether the task has been declared done. Under the chat,
-   **three cards** suggest the next move: short instructions or questions a
+   turn count, and whether the task has been declared done. Under the run
+   button, a collapsible *Or steer it yourself* section holds **three cards**
+   that suggest the next move: short instructions or questions a
    coaching agent proposes from the goal and the latest exchanges, each pushing
    in a different direction. Tap one and you take the instruction-giver's seat
    for that turn: your instruction goes to the assistant and is recorded in
    the AI User's memory so the agents stay coherent afterwards. Or type your
    own in the box below (default: to the assistant; or a note both agents see
-   before the next turn). Prefer to watch? **Let the AI User take one turn**
-   or **run 3 turns**: CAMEL's own user agent instructs, each turn appears as it
-   lands, and the **Narrator**, a third `ChatAgent`, sums up the burst in four
-   plain-English lines: what just happened, how it is going (including "they
-   are repeating themselves"), done or not, and a nudge. Fresh cards appear
-   after every turn. **New task** starts over with the task and role fields
-   cleared.
+   before the next turn). Prefer to watch? **AI User: run all turns** runs the
+   session hands free up to the turn limit (12 by default, adjustable from 4 to
+   40 under Advanced): CAMEL's own user agent instructs, each turn appears as it
+   lands, the progress monitor posts its checks in the chat, and the
+   **Narrator**, a third `ChatAgent`, sums up the burst in four plain-English
+   lines: what just happened, how it is going (including "they are repeating
+   themselves"), done or not, and a nudge. **Pause** and **Resume** hold and
+   continue a run, and ticking **agent mode** at setup runs the whole session
+   with no human input at all. Fresh cards appear after every turn. Sessions
+   are saved automatically: the sidebar lists them, and **Open selected**
+   restores one exactly where it left off. **New session** starts over with the
+   task and role fields cleared.
 
 By default both agents work under a short style rule (at most about 80 words
 per message, code only when asked for), added after the task-specifier has
@@ -464,6 +562,16 @@ canned text "Lorem Ipsum": it exercises the full pipeline (task specifier,
 two agents, turn loop, termination checks) without any network call. It is a
 plumbing test, **not** a demonstration of agent intelligence.
 
+### Phase 2 tests and benchmarks (offline, no key needed)
+
+```bash
+.venv/bin/python demo/test_phase2.py        # 19 end-to-end checks for the three enhancements
+.venv/bin/python demo/benchmark_phase2.py   # monitor accuracy, persistence at scale, error handling
+```
+
+Both run entirely offline against CAMEL's stub model and simulated provider
+errors, so their results do not depend on any provider.
+
 ## Current status (as of 2026-10-24)
 
 | Check | Result | Evidence |
@@ -475,6 +583,14 @@ plumbing test, **not** a demonstration of agent intelligence.
 | Environment reproduced on a second machine (Windows 11, Python 3.10.19) | PASS | `docs/demo_output/05_check_env_windows.txt`, `06_demo_stub_offline_windows.txt` |
 | **Real LLM-backed run, 5 turns, `gpt-4.1-mini-2025-04-14`** | **PASS** | `docs/demo_output/07_demo_real_llm_5_turns.txt` |
 | Notebook version, executed end to end (stub mode and a second real 5-turn run) | PASS | outputs saved inside `demo/role_playing_demo.ipynb` |
+| Phase 2 verification suite, 19 checks (persistence, monitor, preflight, retry) | PASS | `demo/test_phase2.py` (offline) |
+| Phase 2 benchmarks (monitor accuracy, persistence at scale, error handling) | PASS | `demo/benchmark_phase2.py` (offline) |
+
+Phase 2's checks are offline by design: a session is started, run, saved
+and reopened; the monitor is fed scripted transcripts that repeat and stall;
+the retry logic is driven through simulated provider failures. In the
+persistence benchmark, 50 sessions of 40 messages each (2,000 messages) were
+saved and reopened cold with every field and every message exact.
 
 The real run (log 07) shows all three CAMEL behaviours: the task-specifier
 agent rewrote "Develop a trading bot for the stock market" into a concrete
@@ -525,6 +641,14 @@ notebook come from those real runs. The upstream CAMEL framework (the `camel/`
 submodule) is unmodified and was written by its own authors, not by us or by
 an AI tool on our behalf.
 
+Phase 2 (the three enhancements in `demo/session_store.py`,
+`demo/progress_monitor.py` and `demo/model_config.py`, their changes in
+`demo/playground.py`, the verification suite and benchmarks, and this README
+update) was developed with **Muse** (Meta's personal AI agent) assisting in
+the same pair-programming role. Every Phase 2 claim above is verified by the
+offline suite in `demo/test_phase2.py` and `demo/benchmark_phase2.py`, whose
+outputs are reproducible from this repository.
+
 ## Phase 1 checklist
 
 - [x] Framework built in an isolated environment
@@ -536,3 +660,12 @@ an AI tool on our behalf.
 - [x] ER diagram (`docs/CAMEL_Playground_ER_Diagram_and_Future_Plan.docx`, also embedded in this README)
 - [x] Demo video: https://drive.google.com/file/d/1jsQBaKJzxOgjVpOkQbZcRezwolk6Fwi-/view
 - [x] Future plan section (in `docs/CAMEL_Playground_ER_Diagram_and_Future_Plan.docx`)
+
+## Phase 2 checklist
+
+- [x] Persistent sessions (SQLite store, sidebar open and delete, exact restore)
+- [x] Progress monitoring (repetition, stall, drift, completion) with run-all, turn limit, pause/resume and agent mode
+- [x] Model configuration preflight, error classification and retry with backoff
+- [x] Offline verification suite (19 checks) and benchmarks, all passing
+- [x] Code merged to `main` in this repository and redeployed to the hosted Playground
+- [ ] Phase 2 report and demo video (submitted through Blackboard, not stored in this repo)
