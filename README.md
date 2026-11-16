@@ -1,16 +1,17 @@
 # SENG 691 – Group 3 – CAMEL Multi-Agent Framework (Phases 1 and 2)
 
-Phase 1 deliverable: the CAMEL agent framework built and deployed in a working
-environment, with a reproducible demo of its main behaviour (two LLM agents
-role-playing to solve a task). Group submission due **Tuesday, Oct 27, 2026,
-11:59 PM EDT**.
-
 Phase 2 (due **Sunday, Nov 15, 2026, 11:59 PM EST**) implements the three
 enhancements the Phase 1 future plan proposed: persistent sessions, progress
 monitoring with run controls, and model configuration with preflight checks
 and automatic retry. See **Phase 2 enhancements** below for what was built,
 how it is verified, and how to run the tests and benchmarks. The hosted
 Playground and the `main` branch of this repository now run the Phase 2 build.
+
+Phase 1 (submitted Tuesday, Oct 27, 2026) built and deployed the CAMEL agent
+framework in a working environment, with a reproducible demo of its main
+behaviour (two LLM agents role-playing to solve a task) and the future plan
+that Phase 2 then implemented. The Phase 1 material below is kept as the
+reproduction and design record for that work.
 
 This repository contains **our setup, demo scripts and notes**. The upstream
 CAMEL source is included as a git submodule pinned to an exact commit, so the
@@ -121,9 +122,47 @@ back and forth. The method is from Li et al., *CAMEL: Communicative Agents for
 (arXiv:2303.17760). Code: https://github.com/camel-ai/camel, docs:
 https://docs.camel-ai.org.
 
-## Report, ER diagram and future plan
+## Data model: the implemented schema and the Phase 1 proposal
 
-The written Phase 1 deliverables live in `docs/`:
+Phase 2 implemented the core of the persistent data model Phase 1 proposed.
+The schema as built is written by `demo/session_store.py` to a SQLite
+database (`data/sessions.db`); it has three tables:
+
+```mermaid
+erDiagram
+    SESSIONS ||--o{ MESSAGES : "has"
+    SESSIONS ||--o{ GUIDANCE : "has"
+    SESSIONS {
+        int session_id PK
+        string created_at
+        string updated_at
+        string task_original "what the human typed"
+        string specified_task "sharpened by the task-specifier"
+        string assistant_role
+        string user_role
+        string platform
+        string model_name
+        string mode
+        int concise
+        int turn
+        string status "in_progress or done"
+    }
+    MESSAGES {
+        int session_id FK
+        int seq PK "order within the session"
+        string speaker
+        string text
+    }
+    GUIDANCE {
+        int session_id FK
+        int seq PK "order within the session"
+        int turn
+        string text
+    }
+```
+
+The Phase 2 report carries this schema as a rendered diagram. The original
+proposal lives in the written Phase 1 deliverables in `docs/`:
 
 - **[CAMEL_Technical_Report.docx](docs/CAMEL_Technical_Report.docx)**: how the
   system works, code and technology analysis, demonstration and evaluation,
@@ -135,22 +174,22 @@ The written Phase 1 deliverables live in `docs/`:
 
 ![Proposed logical ER diagram for the CAMEL Playground](docs/er_diagram_proposed.png)
 
-This is the project's ER diagram as proposed in Phase 1, when the demo kept
-everything in memory and had no database. Phase 2 implemented its core:
-sessions, messages and guidance are now stored in SQLite by
-`demo/session_store.py`, and the Phase 2 report carries the revised diagram
-for the schema as implemented. The next section shows the same system from
-the other side, the objects that exist at runtime today, and ends with a
-table mapping one onto the other.
+That diagram is the Phase 1 proposal, drawn when the demo kept everything in
+memory and had no database; its users and accounts tables were not built.
+The next section shows the same system from the other side, the objects that
+exist at runtime today, and ends with a table mapping one onto the other.
 
 ## How the pieces fit together (runtime object diagram)
 
-Everything below lives in memory for one run. This diagram describes the
+This diagram describes the
 runtime objects and how they relate, in the same box-and-line notation as the
 ER diagram above so the two can be read together. Boxes from `ROLE_PLAYING_SESSION`
 down to `MESSAGE` are upstream CAMEL; `PLAYGROUND`, `NARRATOR_AGENT`,
 `COACH_AGENT`, `NEXT_MOVE_CARD` and `HUMAN_INPUT` are our additions in
-`demo/playground.py`. GitHub renders the diagram; the source is plain Mermaid.
+`demo/playground.py`. Phase 2 added `SESSION_STORE`, `PROGRESS_MONITOR` and
+`MODEL_CONFIG` in their own modules next to `playground.py`: the session and
+its messages are written through to the store as the run goes, so a run no
+longer lives only in memory. GitHub renders the diagram; the source is plain Mermaid.
 
 ```mermaid
 erDiagram
@@ -203,6 +242,18 @@ erDiagram
         string type "card tap, instruction, note or question"
         string text
     }
+    SESSION_STORE {
+        string database "SQLite, data/sessions.db"
+        string tables "sessions, messages, guidance"
+    }
+    PROGRESS_MONITOR {
+        string kind "deterministic checker, not an agent"
+        string flags "repetition, stall, drift, completion"
+    }
+    MODEL_CONFIG {
+        string preflight "validates the setup before a run"
+        string retry "classifies errors, retries temporary ones"
+    }
 
     TASK_SPECIFY_AGENT ||--o| TASK : "sharpens"
     ROLE_PLAYING_SESSION ||--|| TASK : "works on"
@@ -221,6 +272,10 @@ erDiagram
     HUMAN_INPUT }o--o| MESSAGE : "becomes, in the user or assistant agent's memory"
     NARRATOR_AGENT }o--|| MODEL_BACKEND : "calls"
     COACH_AGENT }o--|| MODEL_BACKEND : "calls"
+    PLAYGROUND ||--|| SESSION_STORE : "writes through"
+    SESSION_STORE ||--o{ MESSAGE : "persists"
+    PLAYGROUND ||--|| PROGRESS_MONITOR : "consults after every turn"
+    PLAYGROUND ||--|| MODEL_CONFIG : "checks setup, wraps calls"
 ```
 
 Reading the diagram: one session owns one task and exactly two `ChatAgent`s.
@@ -230,7 +285,12 @@ our setup all agents share one model backend, chosen per team member through
 task. The Playground wraps the session: after every turn a coach agent
 proposes three cards, a narrator agent summarises bursts, and anything the
 human types is written into an agent's memory as a message so the agents stay
-coherent. Upstream CAMEL also supports an optional critic agent and task
+coherent. Phase 2 wraps the same objects with persistence and supervision:
+the Playground writes each session and message through to the session store,
+asks the progress monitor to check the conversation after every turn, and
+routes model setup and calls through the model configuration module, which
+checks the setup before the run and classifies and retries failures during
+it. Upstream CAMEL also supports an optional critic agent and task
 planner (fields on `RolePlaying`); we do not use them, so they are omitted.
 
 How the runtime objects map onto the proposed schema in
@@ -245,6 +305,8 @@ How the runtime objects map onto the proposed schema in
 | `MODEL_BACKEND` | `MODEL_CONFIG` | `provider`, `model_name`, `is_local` (Ollama) |
 | `HUMAN_INPUT` | `GUIDANCE` | `guidance_type` is our card tap / instruction / note / question |
 | `NARRATOR_AGENT`, `COACH_AGENT`, `NEXT_MOVE_CARD` | not stored | derived from the messages each time, so they need no table |
+| `SESSION_STORE` | `sessions`, `messages`, `guidance` (schema above) | the implemented Phase 2 store |
+| `PROGRESS_MONITOR`, `MODEL_CONFIG` | not stored | derived checks and call handling, so they need no table |
 | none | `APP_USER` | the Playground has no accounts yet; this is the future-plan part |
 | `MEMORY` | none | an in-process cache of `MESSAGE` rows; the table replaces it |
 
@@ -350,6 +412,11 @@ cp .env.example .env
   to use a different provider or model.
 
 ## Using a different model or provider (per team member)
+
+This section is Phase 1 background, researched on 2026-10-24; provider
+limits and default models change often. The Playground itself now offers
+only OpenAI and OpenRouter (see the Phase 2 note below); the wider backend
+choice described here applies to the demo script and the notebook.
 
 CAMEL is not tied to OpenAI. The demo script and notebook accept any model
 backend CAMEL supports, and each team member can pick their own without
@@ -538,8 +605,11 @@ whoever owns the Render account:
    shown at the top of the service page; ours is https://camel-playground.onrender.com.
 
 After that: push to `main`, Render rebuilds and restarts automatically. Each
-visitor gets their own conversation (per-browser session), and the login stops
-strangers from using the key. Free OpenRouter models are rate-limited (a
+visitor gets their own conversation (per-browser session) and the login stops
+strangers from using the key, but Phase 2's saved-session list is stored on
+the server and is shared by everyone who opens the hosted site, and it is
+wiped whenever the service restarts or redeploys (see Known limitations
+under Phase 2 enhancements). Free OpenRouter models are rate-limited (a
 daily request cap per key, and slower than paid models); if the Narrator or an
 agent returns an error about limits, wait a minute or pick a specific free
 model in the Playground's model box (for example `google/gemma-4-31b-it:free`).
@@ -572,19 +642,19 @@ plumbing test, **not** a demonstration of agent intelligence.
 Both run entirely offline against CAMEL's stub model and simulated provider
 errors, so their results do not depend on any provider.
 
-## Current status (as of 2026-10-24)
+## Current status (as of 2026-11-15)
 
 | Check | Result | Evidence |
 |---|---|---|
-| CAMEL imports, version reported | PASS | `docs/demo_output/02_check_env.txt` |
-| Role-playing pipeline, offline stub model, 3 turns | PASS | `docs/demo_output/04_demo_stub_offline.txt` |
-| Upstream example with no key | fails cleanly: `ValueError: Missing ... OPENAI_API_KEY` | `docs/demo_output/01_upstream_example_no_key.txt` |
-| Our demo with no key | exits early with instructions | `docs/demo_output/03_demo_no_key.txt` |
-| Environment reproduced on a second machine (Windows 11, Python 3.10.19) | PASS | `docs/demo_output/05_check_env_windows.txt`, `06_demo_stub_offline_windows.txt` |
-| **Real LLM-backed run, 5 turns, `gpt-4.1-mini-2025-04-14`** | **PASS** | `docs/demo_output/07_demo_real_llm_5_turns.txt` |
-| Notebook version, executed end to end (stub mode and a second real 5-turn run) | PASS | outputs saved inside `demo/role_playing_demo.ipynb` |
 | Phase 2 verification suite, 19 checks (persistence, monitor, preflight, retry) | PASS | `demo/test_phase2.py` (offline) |
 | Phase 2 benchmarks (monitor accuracy, persistence at scale, error handling) | PASS | `demo/benchmark_phase2.py` (offline) |
+| **Real LLM-backed run, 5 turns, `gpt-4.1-mini-2025-04-14`** | **PASS** | `docs/demo_output/07_demo_real_llm_5_turns.txt` |
+| Notebook version, executed end to end (stub mode and a second real 5-turn run) | PASS | outputs saved inside `demo/role_playing_demo.ipynb` |
+| CAMEL imports, version reported | PASS | `docs/demo_output/02_check_env.txt` |
+| Role-playing pipeline, offline stub model, 3 turns | PASS | `docs/demo_output/04_demo_stub_offline.txt` |
+| Environment reproduced on a second machine (Windows 11, Python 3.10.19) | PASS | `docs/demo_output/05_check_env_windows.txt`, `06_demo_stub_offline_windows.txt` |
+| Upstream example with no key | fails cleanly: `ValueError: Missing ... OPENAI_API_KEY` | `docs/demo_output/01_upstream_example_no_key.txt` |
+| Our demo with no key | exits early with instructions | `docs/demo_output/03_demo_no_key.txt` |
 
 Phase 2's checks are offline by design: a session is started, run, saved
 and reopened; the monitor is fed scripted transcripts that repeat and stall;
@@ -592,15 +662,13 @@ the retry logic is driven through simulated provider failures. In the
 persistence benchmark, 50 sessions of 40 messages each (2,000 messages) were
 saved and reopened cold with every field and every message exact.
 
-The real run (log 07) shows all three CAMEL behaviours: the task-specifier
-agent rewrote "Develop a trading bot for the stock market" into a concrete
-spec (sentiment-driven NASDAQ bot with stop-loss / take-profit), the AI User
-agent issued one instruction per turn (environment setup, Twitter stream
-module, VADER sentiment function, integration, risk-management module), and
-the AI Assistant agent answered each with code and explanation. The dialogue
-was capped at 5 turns by `--turns`, so the user agent never reached
-`CAMEL_TASK_DONE`; that is expected. Earlier logs (01–04) were captured on
-Linux before any key was available; the stub output is labelled as such.
+The Phase 1 real run (log 07) shows the three CAMEL behaviours: the
+task-specifier rewrote the task into a concrete spec, the AI User issued one
+instruction per turn, and the AI Assistant answered each with code and
+explanation. The dialogue was capped at 5 turns by `--turns`, so the user
+agent never reached `CAMEL_TASK_DONE`; that is expected. Earlier logs
+(01–04) were captured on Linux before any key was available; the stub
+output is labelled as such.
 
 ## Errors encountered and fixes
 
@@ -668,4 +736,4 @@ outputs are reproducible from this repository.
 - [x] Model configuration preflight, error classification and retry with backoff
 - [x] Offline verification suite (19 checks) and benchmarks, all passing
 - [x] Code merged to `main` in this repository and redeployed to the hosted Playground
-- [ ] Phase 2 report and demo video (submitted through Blackboard, not stored in this repo)
+- [ ] Phase 2 report and demo video: both complete, submission through Blackboard (not stored in this repo)
