@@ -29,7 +29,7 @@ after a quiet period takes up to a minute to wake.
 **Demo video (Phase 1):** https://drive.google.com/file/d/1jsQBaKJzxOgjVpOkQbZcRezwolk6Fwi-/view
 (Google Drive) walks through the notebook run and the Playground.
 
-**Phase 2 demo video:** https://drive.google.com/file/d/1i9ZylyeT1iwc3myuymWmPxV66DeHX-xR/view
+**Demo video (Phase 2):** https://drive.google.com/file/d/1i9ZylyeT1iwc3myuymWmPxV66DeHX-xR/view
 (Google Drive) walks through the three enhancements running in the app's
 offline test mode. It is also submitted with the Phase 2 report through
 Blackboard.
