@@ -29,9 +29,10 @@ after a quiet period takes up to a minute to wake.
 **Demo video (Phase 1):** https://drive.google.com/file/d/1jsQBaKJzxOgjVpOkQbZcRezwolk6Fwi-/view
 (Google Drive) walks through the notebook run and the Playground.
 
-**Phase 2 demo video:** a narrated walkthrough of the three enhancements
-running in the app's offline test mode, submitted with the Phase 2 report
-through Blackboard.
+**Phase 2 demo video:** https://drive.google.com/file/d/1i9ZylyeT1iwc3myuymWmPxV66DeHX-xR/view
+(Google Drive) walks through the three enhancements running in the app's
+offline test mode. It is also submitted with the Phase 2 report through
+Blackboard.
 
 No account needed to read the demo: the notebook
 [demo/role_playing_demo.ipynb](demo/role_playing_demo.ipynb) is committed with
@@ -736,4 +737,4 @@ outputs are reproducible from this repository.
 - [x] Model configuration preflight, error classification and retry with backoff
 - [x] Offline verification suite (19 checks) and benchmarks, all passing
 - [x] Code merged to `main` in this repository and redeployed to the hosted Playground
-- [ ] Phase 2 report and demo video: both complete, submission through Blackboard (not stored in this repo)
+- [ ] Phase 2 report and demo video: both complete, submission through Blackboard (not stored in this repo); video at https://drive.google.com/file/d/1i9ZylyeT1iwc3myuymWmPxV66DeHX-xR/view
